@@ -2,6 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using OrderFlowAPI.Data;
 using OrderFlowAPI.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace OrderFlowAPI.Controllers
 {
@@ -18,7 +22,7 @@ namespace OrderFlowAPI.Controllers
 
         // GET api/orders
         [HttpGet]
-        public ActionResult<IEnumerable<Order>> GetOrders(int? pageIndex = null, int? pageSize = null)
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrders(int? pageIndex = null, int? pageSize = null)
         {
             // Ensure non-negative page index and page size if provided
             if (pageIndex.HasValue && pageIndex <= 0 || pageSize.HasValue && pageSize <= 0)
@@ -30,21 +34,20 @@ namespace OrderFlowAPI.Controllers
             int ordersToSkip = (pageIndex.GetValueOrDefault(1) - 1) * pageSize.GetValueOrDefault(10);
 
             // Retrieve the paginated list of orders
-            var orders = _context.Orders
+            var orders = await _context.Orders
                 .OrderByDescending(o => o.OrderDate)
                 .Include(o => o.Customer)
                 .Include(o => o.Items)
                 .Skip(ordersToSkip)
                 .Take(pageSize.GetValueOrDefault(10))
-                .ToList();
+                .ToListAsync();
 
-            return orders;
+            return Ok(orders);
         }
-
 
         // POST api/orders
         [HttpPost]
-        public async Task<ActionResult<Order>> CreateOrder(orderInput order)
+        public async Task<IActionResult> CreateOrder(orderInput order)
         {
             if (order == null)
             {
@@ -79,7 +82,7 @@ namespace OrderFlowAPI.Controllers
             }
 
             // Check if Customer with provided CustomerId exists in the database
-            var customer = _context.Customers.FirstOrDefault(c => c.Id == order.CustomerId);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == order.CustomerId);
             if (customer == null)
             {
                 return NotFound("Customer with the provided ID not found.");
@@ -90,12 +93,12 @@ namespace OrderFlowAPI.Controllers
                 Order newOrder = new Order();
                 newOrder.orderInformation = order.orderInformation;
                 newOrder.CustomerId = order.CustomerId;
-                newOrder.Customer = await _context.Customers.Where(x => x.Id == order.CustomerId).FirstOrDefaultAsync();
+                newOrder.Customer = customer;
                 newOrder.OrderDate = DateTime.Now;
                 newOrder.Items = order.Items;
 
                 _context.Orders.Add(newOrder);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return CreatedAtAction(nameof(GetOrderById), new { id = newOrder.Id }, newOrder);
             }
             catch (Exception ex)
@@ -106,25 +109,25 @@ namespace OrderFlowAPI.Controllers
 
         // GET api/orders/{id}
         [HttpGet("{id}")]
-        public ActionResult<Order> GetOrderById(int id)
+        public async Task<ActionResult<Order>> GetOrderById(int id)
         {
-            var order = _context.Orders
+            var order = await _context.Orders
                         .Include(o => o.Customer)
                         .Include(o => o.Items)
-                        .FirstOrDefault(o => o.Id == id);
+                        .FirstOrDefaultAsync(o => o.Id == id);
             if (order == null)
             {
                 return NotFound();
             }
 
-            return order;
+            return Ok(order);
         }
 
         // PATCH api/orders/{id}
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateOrder(int id, orderInput updatedOrder)
         {
-            var order = _context.Orders.Find(id);
+            var order = await _context.Orders.FindAsync(id);
             if (order == null)
             {
                 return NotFound("Order not found.");
@@ -164,7 +167,7 @@ namespace OrderFlowAPI.Controllers
             }
 
             // Check if Customer with provided CustomerId exists in the database
-            var customer = _context.Customers.FirstOrDefault(c => c.Id == updatedOrder.CustomerId);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == updatedOrder.CustomerId);
             if (customer == null)
             {
                 return NotFound("Customer with the provided ID not found.");
@@ -190,9 +193,9 @@ namespace OrderFlowAPI.Controllers
 
         // DELETE api/orders/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteOrder(int id)
+        public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = _context.Orders.Find(id);
+            var order = await _context.Orders.FindAsync(id);
             if (order == null)
             {
                 return NotFound();
@@ -201,7 +204,7 @@ namespace OrderFlowAPI.Controllers
             try
             {
                 _context.Orders.Remove(order);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return NoContent();
             }
             catch (Exception ex)
@@ -210,46 +213,46 @@ namespace OrderFlowAPI.Controllers
             }
         }
 
-        // GET api/orders/customer/{customerId}
+        // GET api/orders/customer/id/{customerId}
         [HttpGet("customer/id/{customerId}")]
-        public ActionResult<IEnumerable<Order>> GetOrdersByCustomer(int customerId)
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByCustomer(int customerId)
         {
-            var orders = _context.Orders
+            var orders = await _context.Orders
                 .Where(o => o.CustomerId == customerId)
                 .Include(o => o.Customer)
                 .Include(o => o.Items)
-                .ToList();
+                .ToListAsync();
 
             if (orders.Count == 0)
             {
                 return NotFound("No orders found for the specified customer.");
             }
 
-            return orders;
+            return Ok(orders);
         }
 
         // GET api/orders/customer/name/{customerName}
         [HttpGet("customer/name/{customerName}")]
-        public ActionResult<IEnumerable<Order>> GetOrdersByCustomer(string customerName)
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByCustomer(string customerName)
         {
-            var customer = _context.Customers.FirstOrDefault(c => c.Name == customerName);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Name == customerName);
             if (customer == null)
             {
                 return NotFound("Customer not found.");
             }
 
-            var orders = _context.Orders
+            var orders = await _context.Orders
                 .Where(o => o.CustomerId == customer.Id)
                 .Include(o => o.Customer)
                 .Include(o => o.Items)
-                .ToList();
+                .ToListAsync();
 
             if (orders.Count == 0)
             {
                 return NotFound("No orders found for the specified customer.");
             }
 
-            return orders;
+            return Ok(orders);
         }
     }
 }
