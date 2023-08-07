@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "N6T85EpQ49Mer3Ulkfox7l71mI+DjRgDFVRKzhQkyhk=",
+  "Source": "OrderFlowAPI",
+  "BasePath": "_content/OrderFlowAPI",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
