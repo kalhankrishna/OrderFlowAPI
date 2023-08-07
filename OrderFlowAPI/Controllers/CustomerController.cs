@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OrderFlowAPI.Data;
 using OrderFlowAPI.Models;
 
@@ -15,48 +16,43 @@ namespace OrderFlowAPI.Controllers
             _context = context;
         }
 
-        // GET api/customer
         [HttpGet]
-        public ActionResult<IEnumerable<Customer>> GetCustomers()
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
         {
-            return _context.Customers.ToList();
+            var customers = await _context.Customers.ToListAsync();
+            return Ok(customers);
         }
 
-        // GET api/customer/{id}
         [HttpGet("{id}")]
-        public ActionResult<Customer> GetCustomerById(int id)
+        public async Task<ActionResult<Customer>> GetCustomerById(int id)
         {
-            var customer = _context.Customers.Find(id);
+            var customer = await _context.Customers.FindAsync(id);
             if (customer == null)
             {
                 return NotFound();
             }
-            return customer;
+            return Ok(customer);
         }
 
-        // POST api/customer
         [HttpPost]
-        public ActionResult<Customer> CreateCustomer(Customer customer)
+        public async Task<IActionResult> CreateCustomer(Customer customer)
         {
             if (customer == null)
             {
                 return BadRequest("Customer object is null.");
             }
 
-            // Check if Name is provided and not empty
             if (string.IsNullOrEmpty(customer.Name))
             {
                 return BadRequest("Name is required for creating a customer.");
             }
 
-            // Check if Email is provided and not empty
             if (string.IsNullOrEmpty(customer.Email))
             {
                 return BadRequest("Email is required for creating a customer.");
             }
 
-            // Check if a customer with the provided email already exists
-            if (_context.Customers.Any(c => c.Email == customer.Email))
+            if (await _context.Customers.AnyAsync(c => c.Email == customer.Email))
             {
                 return Conflict("Customer with the provided email already exists.");
             }
@@ -64,7 +60,7 @@ namespace OrderFlowAPI.Controllers
             try
             {
                 _context.Customers.Add(customer);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, customer);
             }
             catch (Exception ex)
@@ -73,36 +69,31 @@ namespace OrderFlowAPI.Controllers
             }
         }
 
-        // PATCH api/customer/{id}
         [HttpPatch("{id}")]
-        public IActionResult UpdateCustomer(int id, Customer updatedCustomer)
+        public async Task<IActionResult> UpdateCustomer(int id, Customer updatedCustomer)
         {
-            var customer = _context.Customers.Find(id);
+            var customer = await _context.Customers.FindAsync(id);
             if (customer == null)
             {
                 return NotFound();
             }
 
-            // Check if Customer is provided
             if (updatedCustomer == null)
             {
                 return BadRequest("Customer object to be updated is null.");
             }
 
-            // Check if Name is provided and not empty
-            if (string.IsNullOrEmpty(customer.Name))
+            if (string.IsNullOrEmpty(updatedCustomer.Name))
             {
-                return BadRequest("Email is required for creating a customer.");
+                return BadRequest("Name is required for updating a customer.");
             }
 
-            // Check if Email is provided and not empty
             if (string.IsNullOrEmpty(updatedCustomer.Email))
             {
                 return BadRequest("Email is required for updating a customer.");
             }
 
-            // Check if the provided email is unique and not used by other customers
-            if (_context.Customers.Any(c => c.Id != id && c.Email == updatedCustomer.Email))
+            if (await _context.Customers.AnyAsync(c => c.Id != id && c.Email == updatedCustomer.Email))
             {
                 return Conflict("Customer with the provided email already exists.");
             }
@@ -112,7 +103,7 @@ namespace OrderFlowAPI.Controllers
                 customer.Name = updatedCustomer.Name;
                 customer.Email = updatedCustomer.Email;
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return Ok("Customer Updated Successfully!");
             }
             catch (Exception ex)
@@ -121,11 +112,10 @@ namespace OrderFlowAPI.Controllers
             }
         }
 
-        // DELETE api/customer/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteCustomer(int id)
+        public async Task<IActionResult> DeleteCustomer(int id)
         {
-            var customer = _context.Customers.Find(id);
+            var customer = await _context.Customers.FindAsync(id);
             if (customer == null)
             {
                 return NotFound();
@@ -134,7 +124,7 @@ namespace OrderFlowAPI.Controllers
             try
             {
                 _context.Customers.Remove(customer);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return Ok("Customer deleted successfully");
             }
             catch (Exception ex)
