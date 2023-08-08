@@ -28,24 +28,29 @@ Testing-
 
 
 
-ENTITY-RELATIONSHIP DIAGRAM
+ENTITY-RELATIONSHIP
 
-+-----------------+     +-----------------+     +-----------------+
-|      Order      |     |     Customer    |     |      Item       |
-+-----------------+     +-----------------+     +-----------------+
-| Id              |     | Id              |     | Id              |
-| orderInformation|     | Name            |     | Name            |
-| OrderDate       |     | Email           |     +-----------------+
-| CustomerId (FK) |<----|                 |
-+-----------------+     +-----------------+
-                        ^
-                        |
-                   +-----------------+
-                   |  Order-Customer |
-                   +-----------------+
-                   | OrderId (FK)    |
-                   | CustomerId (FK) |
-                   +-----------------+
+Order Entity:
+
+Attributes: Id (Primary Key), orderInformation, OrderDate
+Relationships: Belongs to a Customer (CustomerId as Foreign Key)
+Contains a collection of Items
+
+Customer Entity:
+
+Attributes: Id (Primary Key), Name, Email
+Relationships: Can have multiple Orders
+
+Item Entity:
+
+Attributes: Id (Primary Key), Name
+Relationships: None
+
+Order-Customer Relationship:
+
+Attributes: None
+Represents the association between Order and Customer entities
+Connects an Order to a Customer (OrderId and CustomerId as Foreign Keys)
 
 
 Note: No Interfaces or hard dependency injections have been used.
